@@ -316,14 +316,27 @@
 ; Pipeline/Transaction
 
 (defn multi [p]
-  (let [j (static-lease p)
-        t (.multi j)]
-    {:trans t :jedis j :pool p}))
+  (try_multi p 0))
+  
+(defn try_multi
+  [p attempts]
+  (try
+    (let [j (static-lease p)
+          t (.multi j)]
+      {:trans t :jedis j :pool p})
+    (catch redis.clients.jedis.exceptions.JedisConnectionException connect-err
+      (if (< attempts 10)
+        (do
+          (.returnResource p j)
+          (try_multi p (+ attempts 1)))
+        (throw connect-err)))))
+ 
+ 
 
 (defn exec [m]
-  (let [t           (clojure.core/get m :trans)
-        j           (clojure.core/get m :jedis)
-        p           (clojure.core/get m :pool)
+  (let [t           (:trans m)
+        j           (:jedis m)
+        p           (:pool m)
         resps       (.exec t)
         indices     (range (.size resps))
         byte-arrays (map #(.get resps %) indices)
