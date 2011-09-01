@@ -315,9 +315,6 @@
 
 ; Pipeline/Transaction
 
-(defn multi [p]
-  (try_multi p 0))
-  
 (defn try_multi
   [p attempts]
   (try
@@ -331,6 +328,9 @@
           (try_multi p (+ attempts 1)))
         (throw connect-err)))))
  
+(defn multi [p]
+  (try_multi p 0))
+  
  
 
 (defn exec [m]
