@@ -317,16 +317,16 @@
 
 (defn try_multi
   [p attempts]
-  (try
-    (let [j (static-lease p)
-          t (.multi j)]
+  (let [j (static-lease p)]
+   (try
+     (let [t (.multi j)]
       {:trans t :jedis j :pool p})
     (catch redis.clients.jedis.exceptions.JedisConnectionException connect-err
       (if (< attempts 10)
         (do
           (.returnResource p j)
           (try_multi p (+ attempts 1)))
-        (throw connect-err)))))
+        (throw connect-err))))))
  
 (defn multi [p]
   (try_multi p 0))
