@@ -1,3 +1,5 @@
 lib
 *.xml
 *.jar
+*.swp
+*.swo
