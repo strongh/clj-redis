@@ -1,7 +1,7 @@
 (ns clj-redis.client
   (:import java.net.URI)
   (:import (redis.clients.jedis Jedis JedisPool JedisPoolConfig JedisPubSub Transaction))
-  (:import (redis.clients.util SafeEncoder))
+  (:import java.lang.String)
   (:require [clojure.string :as str])
   (:refer-clojure :exclude [get set keys type]))
 
@@ -33,7 +33,7 @@
       (finally
         (.returnResource p j)))))
 (defmethod lease clojure.lang.PersistentArrayMap [m f]
-  (let [t (clojure.core/get m :trans)]
+  (let [t (:trans m)]
     (f t)))
 
 (defn static-lease [p] (.getResource p))
@@ -303,43 +303,19 @@
       (.subscribe j pub-sub ^"[Ljava.lang.String;" (into-array chs))))))
 
 
-; Utils
-
-(defn safe-ba-to-string
-  "Converts byte arrays to strings, leaving nils alone"
-  [ba]
-  (if (nil? ba)
-    nil
-    (SafeEncoder/encode ba)))
-
-
 ; Pipeline/Transaction
-
-(defn try_multi
-  [p attempts]
-  (let [j (static-lease p)]
-   (try
-     (let [t (.multi j)]
-      {:trans t :jedis j :pool p})
-    (catch redis.clients.jedis.exceptions.JedisConnectionException connect-err
-      (if (< attempts 10)
-        (do
-          (.returnResource p j)
-          (try_multi p (+ attempts 1)))
-        (throw connect-err))))))
  
 (defn multi [p]
-  (try_multi p 0))
+  (let [j (static-lease p)
+        t (.multi j)]
+    {:trans t :jedis j :pool p}))
   
- 
-
 (defn exec [m]
-  (let [t           (:trans m)
-        j           (:jedis m)
-        p           (:pool m)
-        resps       (.exec t)
-        indices     (range (.size resps))
-        byte-arrays (map #(.get resps %) indices)
-        strings     (map safe-ba-to-string byte-arrays)]
+  (let [t         (:trans m)
+        j         (:jedis m)
+        p         (:pool m)
+        resp-list (.exec t)
+        indices   (range (.size resp-list))
+        resps     (map #(.get resp-list %) indices)]
     (.returnResource p j)
-    strings))
+    resps))

@@ -1,5 +1,5 @@
-(defproject org.clojars.strongh/clj-redis "0.0.15"
+(defproject org.clojars.strongh/clj-redis "0.0.19"
   :dependencies
     [[org.clojure/clojure "1.3.0-alpha4"]
-     [redis.clients/jedis "1.5.2"]]
+     [org.clojars.aperiodic/jedis "2.0.1"]]
   :dev-dependencies [[lein-clojars "0.6.0"]])
