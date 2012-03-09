@@ -2,3 +2,5 @@ lib
 *.xml
 *.jar
 *.lein*
+*.swp
+*.swo
