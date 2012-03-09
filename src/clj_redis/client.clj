@@ -20,6 +20,9 @@
       (.setTestOnBorrow config test-on-borrow))
     (JedisPool. config host port tout pass)))
 
+(defn close [^JedisPool p]
+  (.destroy p))
+
 
 (defn dispatcher
   [x _]
@@ -304,12 +307,12 @@
 
 
 ; Pipeline/Transaction
- 
+
 (defn multi [p]
   (let [j (static-lease p)
         t (.multi j)]
     {:trans t :jedis j :pool p}))
-  
+
 (defn exec [m]
   (let [t         (:trans m)
         j         (:jedis m)
